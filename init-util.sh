@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Author: Burke Azbill
-# Target OS: Photon OS 1.0
+# Target OS: Photon OS 1.0 (https://vmware.github.io/photon/)
 # https://github.com/burkeazbill/util-01a
 # 
 # 
