@@ -128,6 +128,15 @@ docker-compose up -d
 # Update e-mail address of root to administrator@corp.local (or as desired)
 
 #################################################################### Prepare for iRedMail ####################################################################
+#
+# TO DO: Update /etc/postfix/helo_access.pcre to comment out the following line:
+# /(\.local)$/ REJECT ACCESS DENIED. Your email was rejected because the sending mail server does not identify itself correctly (${1})
+# 
+# Also remove the following plug-ins from /opt/iredapd/settings.py
+# "reject_null_sender", "reject_sender_login_mismatch", "greylisting", amavisd_wblist"
+# The line should result in the following:
+# plugins = ["throttle", "sql_alias_access_policy"]
+
 mkdir -p /srv/iredmail/vmail
 cd ~/git
 git clone https://github.com/burkeazbill/docker-iredmail.git
