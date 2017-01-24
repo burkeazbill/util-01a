@@ -136,6 +136,16 @@ docker-compose up -d
 # "reject_null_sender", "reject_sender_login_mismatch", "greylisting", amavisd_wblist"
 # The line should result in the following:
 # plugins = ["throttle", "sql_alias_access_policy"]
+# 
+# Also, need to update dovecot to allow for plaintext auth:
+# change /etc/dovecot/dovecot.conf line:
+# disable_plaintext_auth = yes
+# TO
+# disable_plaintext_auth = no
+# AND
+# ssl = required
+# TO
+# ssl = yes
 
 mkdir -p /srv/iredmail/vmail
 cd ~/git
