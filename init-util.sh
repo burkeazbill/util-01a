@@ -69,7 +69,7 @@ ntpq -p
 hostnamectl set-hostname util-01a.corp.local
 
 #Prepare Docker
-systemctl enabled docker
+systemctl enable docker
 systemctl start docker
 curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
 chmod +x /usr/bin/docker-compose
