@@ -129,23 +129,12 @@ docker-compose up -d
 
 #################################################################### Prepare for iRedMail ####################################################################
 #
-# TO DO: Update /etc/postfix/helo_access.pcre to comment out the following line:
-# /(\.local)$/ REJECT ACCESS DENIED. Your email was rejected because the sending mail server does not identify itself correctly (${1})
-# 
 # Also remove the following plug-ins from /opt/iredapd/settings.py
 # "reject_null_sender", "reject_sender_login_mismatch", "greylisting", amavisd_wblist"
 # The line should result in the following:
 # plugins = ["throttle", "sql_alias_access_policy"]
 # 
-# Also, need to update dovecot to allow for plaintext auth:
-# change /etc/dovecot/dovecot.conf line:
-# disable_plaintext_auth = yes
-# TO
-# disable_plaintext_auth = no
-# AND
-# ssl = required
-# TO
-# ssl = yes
+
 
 mkdir -p /srv/iredmail/vmail
 cd ~/git
