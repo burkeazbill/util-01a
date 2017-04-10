@@ -145,8 +145,8 @@ cd iredmail
 sed -i 's/yourdomain.lab/rainpole.com/g' ./iredmail.cfg
 # Note the use of single quote on next line - this is due to ! being special char
 sed -i 's/Passw0rd!/VMware1!/g' ./iredmail.cfg
-sed -i 's/x.x.x.x/192.168.110.10/g' ./iredmail.cfg
 sed -i 's/domain2.lab domain3.lab/corp.local abigtelco.com/g' ./iredmail.cfg
+sed -i 's/x.x.x.x/192.168.110.10/g' ./iredmail.cfg
 sed -i 's/# NTPSERVER=.*/NTPSERVER="ntp.corp.local"/g' ./iredmail.cfg
 sed -i 's/PRIMARY_DOMAIN_USERS=.*/PRIMARY_DOMAIN_USERS="administrator ceo cfo cio cloudadmin cmo devmgr devuser ecomops epa infosec itmgr itop-notification gitlab jdev ldev loginsight projmgr rpadmin"/g' ./iredmail.cfg
 # Update docker-compose file with hostname:
