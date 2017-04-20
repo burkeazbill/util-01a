@@ -7,7 +7,7 @@
 # 
 
 # Update system
-tdnf -y upgrade
+# tdnf -y upgrade
 tdnf install -y gawk git ntp sudo
 
 #### Configure util VM user accounts
@@ -138,7 +138,6 @@ docker-compose up -d
 # The line should result in the following:
 # plugins = ["throttle", "sql_alias_access_policy"]
 # 
-
 
 mkdir -p /srv/iredmail/vmail
 cd ~/git
