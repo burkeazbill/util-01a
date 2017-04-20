@@ -46,7 +46,9 @@ EOF
 chmod 644 /etc/systemd/network/10-eth0-static-en.network
 # Disable DHCP:
 # sed -i 's/DHCP=.*/DHCP=no/' /etc/systemd/network/10-dhcp-en.network
-rm -f /etc/systemd/network/10-dhcp-en.network
+# rm -f /etc/systemd/network/10-dhcp-en.network
+# Remove all existing network configurations, it will be re-built later in this script
+rm -f /etc/systemd/network/*.network
 
 # Now restart the network service to apply all changes:
 systemctl daemon-reload
@@ -79,8 +81,10 @@ touch /etc/profile.d/alias.sh
 chmod 644 /etc/profile.d/alias.sh
 echo alias rmcontainers= > /etc/profile.d/alias.sh
 echo alias rmimages= >> /etc/profile.d/alias.sh
+echo alias rmvolumes= >> /etc/profile.d/alias.sh
 sed -i '/rmcontainers=/s/$/\x27docker stop $(docker ps -a -q); docker rm $(docker ps -a -q)\x27/' /etc/profile.d/alias.sh
 sed -i '/rmimages=/s/$/\x27docker rmi $(docker images -q)\x27/' /etc/profile.d/alias.sh
+sed -i '/rmvolumes=/s/$/\x27docker  volume rm $(docker volume ls -f dangling=true -q)\x27/' /etc/profile.d/alias.sh
 
 # Import ControlCenter public auth key to authorized_keys
 echo ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAp7fYaIex88KRGhNWTYIwqJn/jtDp9ZV71WtBSpi9/LFhMh0f87n+W8Ms3QgA2WdEcTJRLoc3blHGo3a6TIqDGuVmGwgJjXpQA65aHjQS5P3gv86vDELuTlKev3BumcvmqpGeoyKY4zn4RLtdiWDCLI+rMEkWAPyV7RbbNzuaJoQUKTdfv1iBfWo0thoQzTj9KluTgM6FWXz7iyNB4J7NXIeYfxfbQgl3mAGdQkc11cgrnfFfjIRVA/nE5pUbOErJ9cUEMscb5iXMPQvs2zKcfZ0FYd4+TwfRpPwzYVC/vmS9kO7jrGQbtkOzTyf1GqOXCQ4URX2cPWS4zthXS5gm5Q== controlcenter > ~/.ssh/authorized_keys
