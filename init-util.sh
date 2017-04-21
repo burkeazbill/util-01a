@@ -26,6 +26,12 @@ echo 'holadmin:VMware1!' | chpasswd
 chage -M 99999 holadmin
 usermod -aG wheel holadmin
 
+# Disable DHCP:
+# sed -i 's/DHCP=.*/DHCP=no/' /etc/systemd/network/10-dhcp-en.network
+# rm -f /etc/systemd/network/10-dhcp-en.network
+# Remove all existing network configurations, it will be re-built later in this script
+rm -f /etc/systemd/network/*.network
+
 # Set Photon OS to use static IP:
 # For VMware Hands On Labs use, nested VMs should be
 # on 192.168.120.0 network. Assigning static ip here
@@ -44,11 +50,6 @@ DNS=192.168.110.10
 UseDNS=false
 EOF
 chmod 644 /etc/systemd/network/10-eth0-static-en.network
-# Disable DHCP:
-# sed -i 's/DHCP=.*/DHCP=no/' /etc/systemd/network/10-dhcp-en.network
-# rm -f /etc/systemd/network/10-dhcp-en.network
-# Remove all existing network configurations, it will be re-built later in this script
-rm -f /etc/systemd/network/*.network
 
 # Now restart the network service to apply all changes:
 systemctl daemon-reload

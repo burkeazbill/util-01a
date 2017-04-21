@@ -4,9 +4,10 @@
 # Target OS: Photon OS 1.0 (https://vmware.github.io/photon/)
 # https://github.com/burkeazbill/util-01a
 # 
-# 
+# This file is for use when testing PhotonOS 
+#
 # Add some important tools
-tdnf install -y gawk git ntp sudo
+tdnf install -y gawk git ntp sudo tar
 # Disable password complexity
 sed -i '/pam_cracklib.so/s/^/# /' /etc/pam.d/system-password
 echo 'root:VMware1!' | chpasswd
