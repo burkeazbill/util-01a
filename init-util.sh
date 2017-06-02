@@ -133,7 +133,7 @@ sed -i 's/gitlab.example.com/gitlab.rainpole.com/g'  ./docker-compose.yml
 sed -i '/hostname:/a\ \ container_name: "gitlab"' ./docker-compose.yml
 # Build and launch Container:
 # docker-compose up -d
-echo  "GitLab CE is ready to compose, run: 'docker-compose up -d' from /root/git/gitlab"
+echo  "GitLab CE is ready to compose, run: 'docker-compose up -d' from /root/git/gitlab/docker"
 #### Additional Gitlab Notes:
 echo "GitLab URL: http://gitlab.rainpole.com:82"
 echo "Initial page load will prompt for PW - set to VMware1!"
