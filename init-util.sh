@@ -132,7 +132,8 @@ sed -i 's/https/http/g'  ./docker-compose.yml
 sed -i 's/gitlab.example.com/gitlab.rainpole.com/g'  ./docker-compose.yml
 sed -i '/hostname:/a\ \ container_name: "gitlab"' ./docker-compose.yml
 # Build and launch Container:
-docker-compose up -d
+# docker-compose up -d
+echo  "GitLab CE is ready to compose, run: 'docker-compose up -d' from /root/git/gitlab"
 #### Additional Gitlab Notes:
 echo "GitLab URL: http://gitlab.rainpole.com:82"
 echo "Initial page load will prompt for PW - set to VMware1!"
@@ -167,12 +168,11 @@ sed -i 's/utility/mail.rainpole.com/g' ./docker-compose.yml
 sed -i '/duration=/i\ \ \ \ \ \ \ \ /bin/bash create_mail_user_SQL.sh corp.local $PRIMARY_DOMAIN_USERS' iredmail/iredmail.sh
 sed -i '/duration=/i\ \ \ \ \ \ \ \ /usr/bin/mysql -uroot -p$PASSWD vmail < /opt/iredmail/iRedMail-$IREDMAIL_VERSION/tools/output.sql' iredmail/iredmail.sh
 # Build and launch Container:
-docker-compose up -d
+echo  "iRedMail is ready to compose, run: 'docker-compose up -d' from /root/git/iredmail"
 #### Additional iRedMail Notes:
-# Webmail Administration: http://mail.rainpole.com/iredadmin
-# Login as postmaster@rainpole.com / VMware1!
-#
-# Webmail URL: http://mail.rainpole.com
+echo "Webmail Administration: http://mail.rainpole.com/iredadmin"
+echo "Login as postmaster@rainpole.com / VMware1!"
+echo "Webmail URL: http://mail.rainpole.com"
 
 
 #################################################################### Now do Jenkins ####################################################################
@@ -194,7 +194,8 @@ sed -i 's/git curl/git ntp curl/' ./Dockerfile
 #################################################################### Harbor ?? ####################################################################
 
 #################################################################### Other(s) ?? ####################################################################
-echo If all went well, http://gitlab.rainpole.com:82 should load
-echo Webmail admin should eventually load at http://mail.rainpole.com/iredadmin (iredmail takes a while to finish loading - ie: 20 min or so)
-echo Webmail client should eventually load at http://mail.rainpole.com/
-echo Make sure to setup NTP inside each of the containers. See notes in http://bit.ly/util-01a for details from Burke on how to do this
+echo "If all went well, http://gitlab.rainpole.com:82 should load"
+echo "Webmail admin should eventually load at http://mail.rainpole.com/iredadmin (iredmail takes a while to finish loading - ie: 20 min or so)"
+echo "Webmail client should eventually load at http://mail.rainpole.com/"
+echo "Make sure to setup NTP inside each of the containers. See notes in http://bit.ly/util-01a for details from Burke on how to do this"
+reboot
