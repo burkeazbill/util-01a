@@ -7,15 +7,19 @@
 # 
 
 # Update system
-# tdnf -y upgrade
+echo "updating system..."
+tdnf -y upgrade
+echo "Installing awk, git, ntp, and sudo"
 tdnf install -y gawk git ntp sudo
 
 #### Configure util VM user accounts
-# Disable password complexity
+echo "Disabling password complexity"
 sed -i '/pam_cracklib.so/s/^/# /' /etc/pam.d/system-password
 echo 'root:VMware1!' | chpasswd
 ## Set root pw to never expire
 chage -M 99999 root
+
+echo "adding jenkins and holadmin users..."
 ## Setup jenkins user/data directory
 groupadd -g 1000 jenkins
 useradd -d /srv/jenkins -u 1000 -g 1000 -m -s /bin/bash jenkins
@@ -26,6 +30,7 @@ echo 'holadmin:VMware1!' | chpasswd
 chage -M 99999 holadmin
 usermod -aG wheel holadmin
 
+echo "Reconfiguring network..."
 # Disable DHCP:
 # sed -i 's/DHCP=.*/DHCP=no/' /etc/systemd/network/10-dhcp-en.network
 # rm -f /etc/systemd/network/10-dhcp-en.network
@@ -42,7 +47,7 @@ cat > /etc/systemd/network/10-eth0-static-en.network << "EOF"
 Name=eth0
 
 [Network]
-Address=192.168.120.91/24
+Address=192.168.120.91/25
 Gateway=192.168.120.1
 DNS=192.168.110.10
 
@@ -55,6 +60,7 @@ chmod 644 /etc/systemd/network/10-eth0-static-en.network
 systemctl daemon-reload
 systemctl restart systemd-networkd
 
+echo "Configuring NTP"
 # Insert pod NTP Server at top of ntp.conf:
 sed -i '1s/^/server ntp.corp.local \n/' /etc/ntp.conf
 
@@ -71,7 +77,7 @@ ntpq -p
 # Set Hostname:
 hostnamectl set-hostname util-01a.corp.local
 
-#Prepare Docker
+echo "Preparing Docker"
 systemctl enable docker
 systemctl start docker
 curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
@@ -87,9 +93,10 @@ sed -i '/rmcontainers=/s/$/\x27docker stop $(docker ps -a -q); docker rm $(docke
 sed -i '/rmimages=/s/$/\x27docker rmi $(docker images -q)\x27/' /etc/profile.d/alias.sh
 sed -i '/rmvolumes=/s/$/\x27docker  volume rm $(docker volume ls -f dangling=true -q)\x27/' /etc/profile.d/alias.sh
 
-# Import ControlCenter public auth key to authorized_keys
+echo "Imporing ControlCenter public auth key to authorized_keys"
 echo ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAp7fYaIex88KRGhNWTYIwqJn/jtDp9ZV71WtBSpi9/LFhMh0f87n+W8Ms3QgA2WdEcTJRLoc3blHGo3a6TIqDGuVmGwgJjXpQA65aHjQS5P3gv86vDELuTlKev3BumcvmqpGeoyKY4zn4RLtdiWDCLI+rMEkWAPyV7RbbNzuaJoQUKTdfv1iBfWo0thoQzTj9KluTgM6FWXz7iyNB4J7NXIeYfxfbQgl3mAGdQkc11cgrnfFfjIRVA/nE5pUbOErJ9cUEMscb5iXMPQvs2zKcfZ0FYd4+TwfRpPwzYVC/vmS9kO7jrGQbtkOzTyf1GqOXCQ4URX2cPWS4zthXS5gm5Q== controlcenter > ~/.ssh/authorized_keys
 
+echo "Reconfiguring SSH to not allow root - only key based auth"
 # Update ssh to NOT allow root
 # Change PermitRootLogin to “no” in /etc/ssh/sshd_config
 sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
@@ -108,6 +115,7 @@ line=$(echo $line | cut -d " " -f 2)
 sed -i "${line} s/%wheel ALL=(ALL) ALL/%wheel ALL=(ALL) NOPASSWD: ALL/" /etc/sudoers
 
 #################################################################### Prepare for GitLab: ####################################################################
+echo "Beginning GitLab Configuration..."
 mkdir -p /srv/gitlab/gitlab /srv/gitlab/redis /srv/gitlab/postgresql
 mkdir -p /root/git
 cd /root/git
@@ -126,11 +134,11 @@ sed -i '/hostname:/a\ \ container_name: "gitlab"' ./docker-compose.yml
 # Build and launch Container:
 docker-compose up -d
 #### Additional Gitlab Notes:
-# GitLab URL: http://gitlab.rainpole.com:82
-# Initial page load will prompt for PW - set to VMware1!
-# Login as root / VMware1!
-# Create a Group(s)
-# Update e-mail address of root to administrator@corp.local (or as desired)
+echo "GitLab URL: http://gitlab.rainpole.com:82"
+echo "Initial page load will prompt for PW - set to VMware1!"
+echo "Login as root / VMware1!"
+echo "Create a Group(s)"
+echo "Update e-mail address of root to administrator@corp.local (or as desired)"
 
 #################################################################### Prepare for iRedMail ####################################################################
 #
@@ -139,7 +147,7 @@ docker-compose up -d
 # The line should result in the following:
 # plugins = ["throttle", "sql_alias_access_policy"]
 # 
-
+echo "Beginning iRedMail Configuration"
 mkdir -p /srv/iredmail/vmail
 cd ~/git
 git clone https://github.com/burkeazbill/docker-iredmail.git
@@ -168,6 +176,7 @@ docker-compose up -d
 
 
 #################################################################### Now do Jenkins ####################################################################
+echo "Beginning Jenkins Configuration -- NEEDS UPDATE/VALIDATION!!!!"
 mkdir -p /srv/jenkins
 cd ~/git
 git clone https://github.com/jenkinsci/docker.git
