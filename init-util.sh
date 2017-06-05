@@ -80,7 +80,7 @@ hostnamectl set-hostname util-01a.corp.local
 echo "Preparing Docker"
 systemctl enable docker
 systemctl start docker
-curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
+curl -L https://github.com/docker/compose/releases/download/1.13.0/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
 chmod +x /usr/bin/docker-compose
 
 # Prepare Docker aliases for ANYONE that logs into VM:
