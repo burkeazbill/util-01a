@@ -198,4 +198,4 @@ echo "If all went well, http://gitlab.rainpole.com:82 should load"
 echo "Webmail admin should eventually load at http://mail.rainpole.com/iredadmin (iredmail takes a while to finish loading - ie: 20 min or so)"
 echo "Webmail client should eventually load at http://mail.rainpole.com/"
 echo "Make sure to setup NTP inside each of the containers. See notes in http://bit.ly/util-01a for details from Burke on how to do this"
-reboot
+echo "This system requires a reboot and docker-compose up -d for each of the containers"
