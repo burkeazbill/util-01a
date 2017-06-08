@@ -47,7 +47,7 @@ cat > /etc/systemd/network/10-eth0-static-en.network << "EOF"
 Name=eth0
 
 [Network]
-Address=192.168.120.91/25
+Address=192.168.120.91/24
 Gateway=192.168.120.1
 DNS=192.168.110.10
 
