@@ -133,7 +133,7 @@ sed -i 's/gitlab.example.com/gitlab.rainpole.com/g'  ./docker-compose.yml
 sed -i '/hostname:/a\ \ container_name: "gitlab"' ./docker-compose.yml
 # Build and launch Container:
 # docker-compose up -d
-echo  "GitLab CE is ready to compose, run: 'docker-compose up -d' from /root/git/gitlab/docker"
+echo  "GitLab CE is ready to compose, run: 'docker-compose up -d' from /root/git/gitlab/docker" > /root/git/gitlab-readme.txt
 #### Additional Gitlab Notes:
 echo "GitLab URL: http://gitlab.rainpole.com:82"
 echo "Initial page load will prompt for PW - set to VMware1!"
@@ -168,11 +168,11 @@ sed -i 's/utility/mail.rainpole.com/g' ./docker-compose.yml
 sed -i '/duration=/i\ \ \ \ \ \ \ \ /bin/bash create_mail_user_SQL.sh corp.local $PRIMARY_DOMAIN_USERS' iredmail/iredmail.sh
 sed -i '/duration=/i\ \ \ \ \ \ \ \ /usr/bin/mysql -uroot -p$PASSWD vmail < /opt/iredmail/iRedMail-$IREDMAIL_VERSION/tools/output.sql' iredmail/iredmail.sh
 # Build and launch Container:
-echo  "iRedMail is ready to compose, run: 'docker-compose up -d' from /root/git/iredmail"
+echo  "iRedMail is ready to compose, run: 'docker-compose up -d' from /root/git/iredmail" > /root/git/iredmail-readme.txt
 #### Additional iRedMail Notes:
-echo "Webmail Administration: http://mail.rainpole.com/iredadmin"
-echo "Login as postmaster@rainpole.com / VMware1!"
-echo "Webmail URL: http://mail.rainpole.com"
+echo "Webmail Administration: http://mail.rainpole.com/iredadmin" >> /root/git/iredmail-readme.txt
+echo "Login as postmaster@rainpole.com / VMware1!" >> /root/git/iredmail-readme.txt
+echo "Webmail URL: http://mail.rainpole.com" >> /root/git/iredmail-readme.txt
 
 
 #################################################################### Now do Jenkins ####################################################################
@@ -188,7 +188,33 @@ sed -i '/volumes/a\ \ \ \ - /srv/jenkins:/var/jenkins_home' ./docker-compose.yml
 sed -i 's/git curl/git ntp curl/' ./Dockerfile
 #  TO DO !!!
 #
+#################################################################### Chef ####################################################################
+# NOTE - to continue adding Containers to PhotonOS, you'll need to resize /dev/sda2 from the default 8GB to much larger
+# TIP: Boot to Ultimate Boot CD (UBCD) and use the Partition Magic tool to resize the partition
+echo "Beginning Chef Configuration -- NEEDS UPDATE/VALIDATION!!!!"
+mkdir -p /srv/chef/root
+mkdir /srv/chef/logs
+mkdir /srv/chef/data
+mkdir ~/git
 
+cd ~/git
+git clone https://github.com/c-buisson/chef-server.git
+cd chef-server
+sed -i 's/admin@myorg.com "passwd"/administrator@rainpole.com "VMware1!"/g' ./configure_chef.sh
+sed -i 's/my_org "Default organization"/rainpole "Rainpole Organization"/g' ./configure_chef.sh
+sed -i 's/\/root \/var\/log/["\/srv\/chef\/data:\/var\/opt\/opscode\/","\/srv\/chef\/logs:\/var\/log\/opscode","\/srv\/chef\/root:\/root"]/' ./Dockerfile
+sed -i '/COPY/aCOPY .\/certs\/* \/var\/opt\/opscode\/nginx\/ca\//' ./Dockerfile
+
+echo "NOTE: this section doesn't fully work, you must get into the container and issue the following commands:'" > /root/git/chef-readme.txt
+echo "docker build -t chef ." >> /root/git/chef-readme.txt
+echo "docker run --privileged --name chef -d --restart=always -e CONTAINER_NAME=chef.rainpole.com -e SSL_PORT=4443 -p 4443:4443 chef" >> /root/git/chef-readme.txt
+echo "chef-server-ctl reconfigure --accept-license" >> /root/git/chef-readme.txt
+echo "chef-server-ctl install chef-manage" >> /root/git/chef-readme.txt
+echo "chef-server-ctl install opscode-reporting" >> /root/git/chef-readme.txt
+echo "chef-server-ctl install opscode-push-jobs-server" >> /root/git/chef-readme.txt
+echo "chef-server-ctl reconfigure" >> /root/git/chef-readme.txt
+echo "chef-manage-ctl reconfigure --accept-license" >> /root/git/chef-readme.txt
+echo "You should now be able to log in to Chef Manage at https://chef.rainpole.com as administrator / VMware1!" >> /root/git/chef-readme.txt
 #################################################################### Artifactory ?? ####################################################################
 
 #################################################################### Harbor ?? ####################################################################

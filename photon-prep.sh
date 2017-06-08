@@ -17,7 +17,7 @@ chage -M 99999 root
 #Prepare Docker
 systemctl enable docker
 systemctl start docker
-curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
+curl -L https://github.com/docker/compose/releases/download/1.13.0/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
 chmod +x /usr/bin/docker-compose
 
 # Prepare Docker aliases for ANYONE that logs into VM:
@@ -26,9 +26,11 @@ chmod 644 /etc/profile.d/alias.sh
 echo alias rmcontainers= > /etc/profile.d/alias.sh
 echo alias rmimages= >> /etc/profile.d/alias.sh
 echo alias rmvolumes= >> /etc/profile.d/alias.sh
+echo alias cleanimages= >> /etc/profile.d/alias.sh
 sed -i '/rmcontainers=/s/$/\x27docker stop $(docker ps -a -q); docker rm $(docker ps -a -q)\x27/' /etc/profile.d/alias.sh
 sed -i '/rmimages=/s/$/\x27docker rmi $(docker images -q)\x27/' /etc/profile.d/alias.sh
-sed -i '/rmvolumes=/s/$/\x27docker  volume rm $(docker volume ls -f dangling=true -q)\x27/' /etc/profile.d/alias.sh
+sed -i '/rmvolumes=/s/$/\x27docker volume rm $(docker volume ls -f dangling=true -q)\x27/' /etc/profile.d/alias.sh
+sed -i '/cleanimages=/s/$/\x27docker rmi $(docker images -f dangling=true -q)\x27/' /etc/profile.d/alias.sh
 
 ## Optionally add the txts command https://github.com/armandino/TxtStyle 
 # for colorizing console text - just uncomment the following lines:
@@ -40,6 +42,7 @@ sed -i '/rmvolumes=/s/$/\x27docker  volume rm $(docker volume ls -f dangling=tru
 
 # Optionally install color cat (ccat) https://github.com/jingweno/ccat
 # Just uncomment the following lines:
-#tdnf install -y go # install pre-req
-#source /etc/profile # Re-load profile to set necessary environment variables
-#ln -s /usr/share/gocode/bin/ccat /usr/local/bin/ccat # create symbolic link for the ccat command
+tdnf install -y go # install pre-req
+go get -u github.com/jingweno/ccat
+source /etc/profile # Re-load profile to set necessary environment variables
+ln -s /usr/share/gocode/bin/ccat /usr/local/bin/ccat # create symbolic link for the ccat command
