@@ -12,12 +12,36 @@ tdnf -y upgrade
 echo "Installing awk, git, ntp, and sudo"
 tdnf install -y gawk git ntp sudo
 
+# Colorize the prompt and add aliases
+cat > /etc/profile.d/alias.sh << "EOF"
+# Setup Docker aliases
+alias rmcontainers='docker stop $(docker ps -a -q); docker rm $(docker ps -a -q)'
+alias rmimages='docker rmi $(docker images -q)'
+alias rmvolumes='docker volume rm $(docker volume ls -q -f dangling=true)'
+alias cleanimages='docker rmi $(docker images -q -f dangling=true)'
+
+# Colorize the console:
+alias less='less --RAW-CONTROL-CHARS'
+alias ls='ls --color=auto'
+
+# Colorize the prompt: (source: Michael Durant reply here: https://unix.stackexchange.com/questions/148/colorizing-your-terminal-and-shell-environment)
+git_branch () { git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'; }
+HOST='\033[02;36m\]\h'; HOST=' '$HOST
+TIME='\033[01;31m\]\t \033[01;32m\]'
+LOCATION=' \033[01;34m\]`pwd | sed "s#\(/[^/]\{1,\}/[^/]\{1,\}/[^/]\{1,\}/\).*\(/[^/]\{1,\}/[^/]\{1,\}\)/\{0,1\}#\1_\2#g"`'
+BRANCH=' \033[00;33m\]$(git_branch)\[\033[00m\]\n\$ '
+PS1=$TIME$USER$HOST$LOCATION$BRANCH
+PS2='\[\033[01;36m\]>'
+EOF
+chmod 644 /etc/profile.d/alias.sh
+
+
 #### Configure util VM user accounts
 echo "Disabling password complexity"
 sed -i '/pam_cracklib.so/s/^/# /' /etc/pam.d/system-password
 echo 'root:VMware1!' | chpasswd
 ## Set root pw to never expire
-chage -M 99999 root
+chage -M -1 root
 
 echo "adding jenkins and holadmin users..."
 ## Setup jenkins user/data directory
@@ -84,22 +108,22 @@ curl -L https://github.com/docker/compose/releases/download/1.13.0/docker-compos
 chmod +x /usr/bin/docker-compose
 
 # Prepare Docker aliases for ANYONE that logs into VM:
-touch /etc/profile.d/alias.sh
-chmod 644 /etc/profile.d/alias.sh
-echo alias rmcontainers= > /etc/profile.d/alias.sh
-echo alias rmimages= >> /etc/profile.d/alias.sh
-echo alias rmvolumes= >> /etc/profile.d/alias.sh
-sed -i '/rmcontainers=/s/$/\x27docker stop $(docker ps -a -q); docker rm $(docker ps -a -q)\x27/' /etc/profile.d/alias.sh
-sed -i '/rmimages=/s/$/\x27docker rmi $(docker images -q)\x27/' /etc/profile.d/alias.sh
-sed -i '/rmvolumes=/s/$/\x27docker  volume rm $(docker volume ls -f dangling=true -q)\x27/' /etc/profile.d/alias.sh
+#touch /etc/profile.d/alias.sh
+#chmod 644 /etc/profile.d/alias.sh
+#echo alias rmcontainers= > /etc/profile.d/alias.sh
+#echo alias rmimages= >> /etc/profile.d/alias.sh
+#echo alias rmvolumes= >> /etc/profile.d/alias.sh
+#sed -i '/rmcontainers=/s/$/\x27docker stop $(docker ps -a -q); docker rm $(docker ps -a -q)\x27/' /etc/profile.d/alias.sh
+#sed -i '/rmimages=/s/$/\x27docker rmi $(docker images -q)\x27/' /etc/profile.d/alias.sh
+#sed -i '/rmvolumes=/s/$/\x27docker  volume rm $(docker volume ls -f dangling=true -q)\x27/' /etc/profile.d/alias.sh
 
 echo "Imporing ControlCenter public auth key to authorized_keys"
 echo ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAp7fYaIex88KRGhNWTYIwqJn/jtDp9ZV71WtBSpi9/LFhMh0f87n+W8Ms3QgA2WdEcTJRLoc3blHGo3a6TIqDGuVmGwgJjXpQA65aHjQS5P3gv86vDELuTlKev3BumcvmqpGeoyKY4zn4RLtdiWDCLI+rMEkWAPyV7RbbNzuaJoQUKTdfv1iBfWo0thoQzTj9KluTgM6FWXz7iyNB4J7NXIeYfxfbQgl3mAGdQkc11cgrnfFfjIRVA/nE5pUbOErJ9cUEMscb5iXMPQvs2zKcfZ0FYd4+TwfRpPwzYVC/vmS9kO7jrGQbtkOzTyf1GqOXCQ4URX2cPWS4zthXS5gm5Q== controlcenter > ~/.ssh/authorized_keys
 
 echo "Reconfiguring SSH to not allow root - only key based auth"
 # Update ssh to NOT allow root
-# Change PermitRootLogin to “no” in /etc/ssh/sshd_config
-sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
+# Change PermitRootLogin to “yes” in /etc/ssh/sshd_config
+sed -i 's/PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config
 # Uncomment the line that prohibits password authentication for root:
 sed -i '/^#.* prohibit/s/^#//' /etc/ssh/sshd_config
 # End result: root can only ssh with key based authentication
@@ -203,17 +227,19 @@ cd chef-server
 sed -i 's/admin@myorg.com "passwd"/administrator@rainpole.com "VMware1!"/g' ./configure_chef.sh
 sed -i 's/my_org "Default organization"/rainpole "Rainpole Organization"/g' ./configure_chef.sh
 sed -i 's/\/root \/var\/log/["\/srv\/chef\/data:\/var\/opt\/opscode\/","\/srv\/chef\/logs:\/var\/log\/opscode","\/srv\/chef\/root:\/root"]/' ./Dockerfile
+# NOTE: Place your .crt and .key files in the certs folder. Ideally, the filename should match the FQDN of your host - for example: chef.rainpole.com.crt chef.rainpole.com.key
 sed -i '/COPY/aCOPY .\/certs\/* \/var\/opt\/opscode\/nginx\/ca\//' ./Dockerfile
 
 echo "NOTE: this section doesn't fully work, you must get into the container and issue the following commands:'" > /root/git/chef-readme.txt
 echo "docker build -t chef ." >> /root/git/chef-readme.txt
 echo "docker run --privileged --name chef -d --restart=always -e CONTAINER_NAME=chef.rainpole.com -e SSL_PORT=4443 -p 4443:4443 chef" >> /root/git/chef-readme.txt
 echo "chef-server-ctl reconfigure --accept-license" >> /root/git/chef-readme.txt
-echo "chef-server-ctl install chef-manage" >> /root/git/chef-readme.txt
-echo "chef-server-ctl install opscode-reporting" >> /root/git/chef-readme.txt
-echo "chef-server-ctl install opscode-push-jobs-server" >> /root/git/chef-readme.txt
-echo "chef-server-ctl reconfigure" >> /root/git/chef-readme.txt
-echo "chef-manage-ctl reconfigure --accept-license" >> /root/git/chef-readme.txt
+# I can't get chef-manage to install and reconfigure inside docker - apparently a "Known Issue"
+# echo "chef-server-ctl install chef-manage" >> /root/git/chef-readme.txt
+# echo "chef-server-ctl install opscode-reporting" >> /root/git/chef-readme.txt
+# echo "chef-server-ctl install opscode-push-jobs-server" >> /root/git/chef-readme.txt
+# echo "chef-server-ctl reconfigure" >> /root/git/chef-readme.txt
+# echo "chef-manage-ctl reconfigure --accept-license" >> /root/git/chef-readme.txt
 echo "You should now be able to log in to Chef Manage at https://chef.rainpole.com as administrator / VMware1!" >> /root/git/chef-readme.txt
 #################################################################### Artifactory ?? ####################################################################
 
