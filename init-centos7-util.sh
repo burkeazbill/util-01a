@@ -39,7 +39,7 @@ sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/selinux/config
 setenforce 0
 
 # Set Hostname:
-hostnamectl set-hotname util-01a.corp.local
+hostnamectl set-hostname util-01a.corp.local
 
 echo "Preparing Docker"
 # Prepare Docker aliases for ANYONE that logs into VM:
@@ -66,7 +66,7 @@ EOF
 
 chmod 644 /etc/profile.d/alias.sh
 
-# Specify DNS servers for Docker:
+# Specify DNS servers for Docker containers:
 cat > /etc/docker/daemon.json << "EOF"
 {
   "dns": ["192.168.110.10"]
@@ -110,16 +110,6 @@ ntpq -p
 # remote           refid      st t when poll reach   delay   offset  jitter
 # ==============================================================================
 # *router.corp.loc LOCAL(1)         6 u   61   64    1    1.235    0.327   0.001
-
-# Prepare Docker aliases for ANYONE that logs into VM:
-#touch /etc/profile.d/alias.sh
-#chmod 644 /etc/profile.d/alias.sh
-#echo alias rmcontainers= > /etc/profile.d/alias.sh
-#echo alias rmimages= >> /etc/profile.d/alias.sh
-#echo alias rmvolumes= >> /etc/profile.d/alias.sh
-#sed -i '/rmcontainers=/s/$/\x27docker stop $(docker ps -a -q); docker rm $(docker ps -a -q)\x27/' /etc/profile.d/alias.sh
-#sed -i '/rmimages=/s/$/\x27docker rmi $(docker images -q)\x27/' /etc/profile.d/alias.sh
-#sed -i '/rmvolumes=/s/$/\x27docker  volume rm $(docker volume ls -f dangling=true -q)\x27/' /etc/profile.d/alias.sh
 
 echo "Imporing ControlCenter public auth key to authorized_keys"
 echo ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAp7fYaIex88KRGhNWTYIwqJn/jtDp9ZV71WtBSpi9/LFhMh0f87n+W8Ms3QgA2WdEcTJRLoc3blHGo3a6TIqDGuVmGwgJjXpQA65aHjQS5P3gv86vDELuTlKev3BumcvmqpGeoyKY4zn4RLtdiWDCLI+rMEkWAPyV7RbbNzuaJoQUKTdfv1iBfWo0thoQzTj9KluTgM6FWXz7iyNB4J7NXIeYfxfbQgl3mAGdQkc11cgrnfFfjIRVA/nE5pUbOErJ9cUEMscb5iXMPQvs2zKcfZ0FYd4+TwfRpPwzYVC/vmS9kO7jrGQbtkOzTyf1GqOXCQ4URX2cPWS4zthXS5gm5Q== controlcenter > ~/.ssh/authorized_keys
