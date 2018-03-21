@@ -80,9 +80,9 @@ chage -M -1 root
 
 echo "adding jenkins and holadmin users..."
 ## Setup jenkins user/data directory
-#groupadd -g 1000 jenkins
-#useradd -d /srv/jenkins -u 1000 -g 1000 -m -s /bin/bash jenkins
-#chage -M 99999 jenkins
+groupadd -g 1000 jenkins
+useradd -d /srv/jenkins -u 1000 -g 1000 -m -s /bin/bash jenkins
+chage -M -1 jenkins
 ## Setup holuser user - for SSH and sudo
 useradd -d /home/holuser -m holuser
 echo 'holuser:VMware1!' | chpasswd
@@ -99,7 +99,6 @@ yum erase -y postfix
 sed -i '/centos.pool.ntp.org/s/^/#/g' /etc/ntp.conf
 # Now add our custom ntp server below the last line of the default pool servers:
 sed -i '/server 3.centos.pool.ntp.org/aserver ntp.corp.local \n' /etc/ntp.conf
-
 
 # Enable/Start ntpd
 systemctl enable ntpd
@@ -151,11 +150,12 @@ sed -i '/hostname:/a\ \ container_name: "gitlab"' ./docker-compose.yml
 # docker-compose up -d
 echo  "GitLab CE is ready to compose, run: 'docker-compose up -d' from /root/git/gitlab/docker" > /root/gitlab-readme.txt
 #### Additional Gitlab Notes:
-echo GitLab URL: http://gitlab.rainpole.com:82
-echo Initial page load will prompt for PW - set to VMware1!
-echo Login as root / VMware1!
-echo Create a Group
-echo Update e-mail address of root to administrator@corp.local or as desired
+echo GitLab URL: http://gitlab.rainpole.com:82 >> /root/gitlab-readme.txt
+echo Initial page load will prompt for PW - set to VMware1! >> /root/gitlab-readme.txt
+echo Login as root / VMware1! >> /root/gitlab-readme.txt
+echo Create a Group >> /root/gitlab-readme.txt
+echo Update e-mail address of root to administrator@corp.local or as desired >> /root/gitlab-readme.txt
+cat /root/gitlab-readme.txt
 
 #################################################################### Prepare for iRedMail ####################################################################
 #
