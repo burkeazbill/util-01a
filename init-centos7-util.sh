@@ -73,10 +73,12 @@ cat > /etc/docker/daemon.json << "EOF"
 }
 EOF
 
-
 #### Configure util VM user accounts
 ## Set root pw to never expire
 chage -M -1 root
+
+# Disable filesystem check on boot
+for fs in `cat /proc/mounts | grep ext[234] | cut -f 1 -d ' '` ; do tune2fs -c 0 -i 0 ${fs} ; done
 
 echo "adding jenkins and holadmin users..."
 ## Setup jenkins user/data directory
@@ -111,6 +113,7 @@ ntpq -p
 # *router.corp.loc LOCAL(1)         6 u   61   64    1    1.235    0.327   0.001
 
 echo "Imporing ControlCenter public auth key to authorized_keys"
+mkdir ~/.ssh
 echo ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAp7fYaIex88KRGhNWTYIwqJn/jtDp9ZV71WtBSpi9/LFhMh0f87n+W8Ms3QgA2WdEcTJRLoc3blHGo3a6TIqDGuVmGwgJjXpQA65aHjQS5P3gv86vDELuTlKev3BumcvmqpGeoyKY4zn4RLtdiWDCLI+rMEkWAPyV7RbbNzuaJoQUKTdfv1iBfWo0thoQzTj9KluTgM6FWXz7iyNB4J7NXIeYfxfbQgl3mAGdQkc11cgrnfFfjIRVA/nE5pUbOErJ9cUEMscb5iXMPQvs2zKcfZ0FYd4+TwfRpPwzYVC/vmS9kO7jrGQbtkOzTyf1GqOXCQ4URX2cPWS4zthXS5gm5Q== controlcenter > ~/.ssh/authorized_keys
 
 echo "Reconfiguring SSH to not allow root - only key based auth"
@@ -118,7 +121,8 @@ echo "Reconfiguring SSH to not allow root - only key based auth"
 # Uncomment PermitRootLogin to “yes” in /etc/ssh/sshd_config
 sed -i '/^#PermitRootLogin/s/^#//' /etc/ssh/sshd_config
 # Set password authentication to no (allowing only key based auth)
-sed -i "s/PasswordAuthentication yes/PasswordAuthentication no/g" /etc/ssh/sshd_config
+# NOTE: If the following line is uncommented, then SFTP with username/password will not work
+# sed -i "s/PasswordAuthentication yes/PasswordAuthentication no/g" /etc/ssh/sshd_config
 # End result: root can only ssh with key based authentication
 
 systemctl restart sshd
@@ -128,7 +132,13 @@ systemctl restart sshd
 sed -i '/^%wheel/s/^/# /' /etc/sudoers
 # Now uncomment the line that allows all members of wheel to execute commands without password:
 sed -i '/NOPASSWD/s/^#//' /etc/sudoers
-
+echo cat /root/*-readme.txt >> /root/.bashrc
+echo "" > /root/00-util-01a-readme.txt
+echo ============================== Util-01a ======================================  >> /root/00-util-01a-readme.txt
+echo Welcome to the utility server!   >> /root/00-util-01a-readme.txt
+echo SFTP/SCP is available on this server using the root account or holuser account  >> /00-root/util-01a-readme.txt
+echo Depending on which additional content Burke has installed,  >> /root/00-util-01a-readme.txt
+echo you may receive additional info-text below this.  >> /root/00-util-01a-readme.txt
 #################################################################### Prepare for GitLab: ####################################################################
 echo "Beginning GitLab Configuration..."
 mkdir -p /srv/gitlab/gitlab /srv/gitlab/redis /srv/gitlab/postgresql
@@ -147,14 +157,17 @@ sed -i 's/https/http/g'  ./docker-compose.yml
 sed -i 's/gitlab.example.com/gitlab.rainpole.com/g'  ./docker-compose.yml
 sed -i '/hostname:/a\ \ container_name: "gitlab"' ./docker-compose.yml
 # Build and launch Container:
-# docker-compose up -d
-echo  "GitLab CE is ready to compose, run: 'docker-compose up -d' from /root/git/gitlab/docker" > /root/gitlab-readme.txt
+docker-compose up -d
 #### Additional Gitlab Notes:
+echo "" > /root/gitlab-readme.txt
+echo ============================== GitLab ======================================  >> /root/gitlab-readme.txt
 echo GitLab URL: http://gitlab.rainpole.com:82 >> /root/gitlab-readme.txt
 echo Initial page load will prompt for PW - set to VMware1! >> /root/gitlab-readme.txt
 echo Login as root / VMware1! >> /root/gitlab-readme.txt
 echo Create a Group >> /root/gitlab-readme.txt
 echo Update e-mail address of root to administrator@corp.local or as desired >> /root/gitlab-readme.txt
+echo To access the console of the GitLab container:  >> /root/gitlab-readme.txt
+echo   docker exec -it gitlab /bin/bash >> /root/gitlab-readme.txt
 cat /root/gitlab-readme.txt
 
 #################################################################### Prepare for iRedMail ####################################################################
