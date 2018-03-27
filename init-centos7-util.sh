@@ -168,6 +168,9 @@ echo Create a Group >> /root/gitlab-readme.txt
 echo Update e-mail address of root to administrator@corp.local or as desired >> /root/gitlab-readme.txt
 echo To access the console of the GitLab container:  >> /root/gitlab-readme.txt
 echo   docker exec -it gitlab /bin/bash >> /root/gitlab-readme.txt
+echo NOTE: To properly git clone a repo via SSH using this container:
+echo   git clone ssh://gitlab.rainpole.com:1022/reponame/reponame.git
+echo   Using the copy to clipboard does not include ssh:// or the custom container port
 cat /root/gitlab-readme.txt
 
 #################################################################### Prepare for iRedMail ####################################################################
