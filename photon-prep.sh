@@ -7,7 +7,7 @@
 # This file is for use when testing PhotonOS 
 #
 # Add some important tools
-tdnf install -y gawk git ntp sudo tar
+tdnf install -y gawk git ntp sudo tar iputils
 # Disable password complexity
 sed -i '/pam_cracklib.so/s/^/# /' /etc/pam.d/system-password
 echo 'root:VMware1!' | chpasswd

@@ -6,18 +6,21 @@
 #
 #
 
+# Set ENV variables:
+docker_compose_version=1.22.0
+
 # Update system
 echo "updating system and installing essentials"
 yum install -y net-tools deltarpm perl make open-vm-tools git yum-utils wget ntp unzip curl tar bzip2 hostname rsyslog openssl epel-release
 yum reinstall -y systemd
 yum update --skip-broken -y
 systemctl restart vmtoolsd
-
+yum install -y W8Ms3QgA2WdEcTJRLoc3blHGo3a6TIqDGuVmGwgJjXpQA65aHjQS5P3gv86vDELuTlKev3BumcvmqpGeoyKY4zn4RLtdiWDCLI
 # Install Docker CE — https://docs.docker.com/engine/installation/linux/centos/#docker-ce
 # https://docs.docker.com/engine/installation/linux/linux-postinstall/#allow-access-to-the-remote-api-through-a-firewall
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 yum-config-manager --enable docker-ce-edge
-Yum-config-manager —-enable docker-ce-test
+yum-config-manager —-enable docker-ce-test
 
 # Refresh the cache:
 sudo yum makecache fast
@@ -25,10 +28,34 @@ yum list docker-ce.x86_64  --showduplicates |sort -r
 yum install -y docker-ce.x86_64
 yum clean all
 rm -rf /var/cache/yum
-curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
-chmod +x /usr/bin/docker-compose
+
+curl -L https://github.com/docker/compose/releases/download/$docker_compose_version/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+
 systemctl start docker
 systemctl enable docker
+
+##### Install Kubernetes #####
+## Reference: https://blog.tekspace.io/setup-kubernetes-cluster-on-centos-7/
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+yum install -y kubectl kubelet kubeadm
+# systemctl enable kubelet && sudo systemctl start kubelet # Only run this line on master node
+# Fix networking:
+sudo bash -c 'cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF'
+sudo sysctl --system
+
+##### END KUBERNETES SETUP #####
 
 # Stop and disable the firewall
 systemctl stop firewalld
@@ -41,14 +68,18 @@ setenforce 0
 # Set Hostname:
 hostnamectl set-hostname util-01a.corp.local
 
-echo "Preparing Docker"
-# Prepare Docker aliases for ANYONE that logs into VM:
+echo "Preparing Docker, colorizing console, and aliasing top->htop"
+# Prepare aliases for ANYONE that logs into VM:
+yum install -y htop # This requires epel-release to be installed
 #!/bin/bash
 cat > /etc/profile.d/alias.sh << "EOF"
 # Setup Docker aliases
 alias rmcontainers='docker stop $(docker ps -a -q); docker rm $(docker ps -a -q)'
 alias rmimages='docker rmi $(docker images -q)'
 alias rmvolumes='docker volume rm $(docker volume ls -f dangling=true -q)'
+
+# alias top with the more colorful htop
+alias top=htop
 
 # Colorize the console:
 alias less='less --RAW-CONTROL-CHARS'
@@ -189,73 +220,72 @@ cd iredmail
 ./deploy.sh
 
 #################################################################### Now do Jenkins ####################################################################
-echo "Beginning Jenkins Configuration -- NEEDS UPDATE/VALIDATION!!!!"
-mkdir -p /srv/jenkins
-cd ~/git
-git clone https://github.com/jenkinsci/docker.git
-mv docker jenkins
-cd jenkins
-sed -i '/build:/a\ \ container_name: "jenkins"' ./docker-compose.yml
-sed -i '/jenkins_home/d' ./docker-compose.yml
-sed -i '/volumes/a\ \ \ \ - /srv/jenkins:/var/jenkins_home' ./docker-compose.yml
-sed -i 's/git curl/git ntp curl/' ./Dockerfile
+# echo "Beginning Jenkins Configuration -- NEEDS UPDATE/VALIDATION!!!!"
+# mkdir -p /srv/jenkins
+# cd ~/git
+# git clone https://github.com/jenkinsci/docker.git
+# mv docker jenkins
+# cd jenkins
+# sed -i '/build:/a\ \ container_name: "jenkins"' ./docker-compose.yml
+# sed -i '/jenkins_home/d' ./docker-compose.yml
+# sed -i '/volumes/a\ \ \ \ - /srv/jenkins:/var/jenkins_home' ./docker-compose.yml
+# sed -i 's/git curl/git ntp curl/' ./Dockerfile
 #  TO DO !!!
 #
 #################################################################### Chef ####################################################################
 # NOTE - to continue adding Containers to PhotonOS, you'll need to resize /dev/sda2 from the default 8GB to much larger
 # TIP: Boot to Ultimate Boot CD (UBCD) and use the Partition Magic tool to resize the partition
-echo "Beginning Chef Configuration -- NEEDS UPDATE/VALIDATION!!!!"
-mkdir -p /srv/chef/root
-mkdir /srv/chef/logs
-mkdir /srv/chef/data
-mkdir ~/git
-
-cd ~/git
-git clone https://github.com/c-buisson/chef-server.git
-cd chef-server
-mkdir certs
+# echo "Beginning Chef Configuration -- NEEDS UPDATE/VALIDATION!!!!"
+# mkdir -p /srv/chef/root
+# mkdir /srv/chef/logs
+# mkdir /srv/chef/data
+# mkdir ~/git
+# 
+# cd ~/git
+# git clone https://github.com/c-buisson/chef-server.git
+# cd chef-server
+# mkdir certs
 
 # Create Configure NTP script:
 # Specify DNS servers for Docker:
-cat > configure_ntp.sh << "EOF"
+# cat > configure_ntp.sh << "EOF"
 #!/bin/bash
 # Comment out all the default pool servers: -- need to add this into configure_chef.sh
-sed -i '/ubuntu.pool.ntp.org/s/^/#/g' /etc/ntp.conf
-sed -i '/ntp.ubuntu.com/s/^/#/' /etc/ntp.conf
+# sed -i '/ubuntu.pool.ntp.org/s/^/#/g' /etc/ntp.conf
+# sed -i '/ntp.ubuntu.com/s/^/#/' /etc/ntp.conf
 # Now add our custom ntp server below the last line of the default pool servers:
-sed -i '/server ntp.ubuntu.com/aserver ntp.corp.local \n' /etc/ntp.conf
-service ntp start
-EOF
-chmod 755 configure_ntp.sh
+# sed -i '/server ntp.ubuntu.com/aserver ntp.corp.local \n' /etc/ntp.conf
+# service ntp start
+# EOF
+# chmod 755 configure_ntp.sh
 
 # Search and replace values in configure_chef.sh
-sed -i 's/admin@myorg.com "passwd"/administrator@rainpole.com "VMware1!"/g' ./configure_chef.sh
-sed -i 's/my_org "Default organization"/rainpole "Rainpole Organization"/g' ./configure_chef.sh
-sed -i '/^.*Creating tar file/ichef-manage-ctl reconfigure --accept-license' ./configure_chef.sh
+# sed -i 's/admin@myorg.com "passwd"/administrator@rainpole.com "VMware1!"/g' ./configure_chef.sh
+# sed -i 's/my_org "Default organization"/rainpole "Rainpole Organization"/g' ./configure_chef.sh
+# sed -i '/^.*Creating tar file/ichef-manage-ctl reconfigure --accept-license' ./configure_chef.sh
 
 # Update Dockerfile Volume mappings
-sed -i 's/\/var\/log/["\/srv\/chef\/data:\/var\/opt\/opscode\/","\/srv\/chef\/logs:\/var\/log\/opscode","\/srv\/chef\/root:\/root"]/' ./Dockerfile
+# sed -i 's/\/var\/log/["\/srv\/chef\/data:\/var\/opt\/opscode\/","\/srv\/chef\/logs:\/var\/log\/opscode","\/srv\/chef\/root:\/root"]/' ./Dockerfile
 # Update Dockerfile to include installation of ntp
-sed -i 's/wget curl rsync/wget curl rsync ntp/' ./Dockerfile
-sed -i 's/configure_chef.sh/configure_chef.sh configure_ntp.sh/' ./Dockerfile
+# sed -i 's/wget curl rsync/wget curl rsync ntp/' ./Dockerfile
+# sed -i 's/configure_chef.sh/configure_chef.sh configure_ntp.sh/' ./Dockerfile
 
 # NOTE: Place your .crt and .key files in the certs folder. Ideally, the filename should match the FQDN of your host - for example: chef.rainpole.com.crt chef.rainpole.com.key
-sed -i '/COPY/aCOPY .\/certs\/* \/var\/opt\/opscode\/nginx\/ca\/' ./Dockerfile
-sed -i '/configure_chef.sh/i\ \ \ \ \/usr\/local\/bin\/configure_ntp.sh' ./run.sh
-
-docker build -t chef .
-docker run --privileged --name chef -d --restart=always -e CONTAINER_NAME=chef.rainpole.com -e SSL_PORT=4443 -p 4443:4443 -v /srv/chef/data:/var/opt/opscode/ -v /srv/chef/logs:/var/log/opscode/ -v /srv/chef/root:/root/ chef
-
-
-echo "NOTE: this section doesn't fully work, you must get into the container and issue the following commands:'" > /root/chef-readme.txt
-echo "docker build -t chef ." >> /root/chef-readme.txt
-echo "docker run --privileged --name chef -d --restart=always -e CONTAINER_NAME=chef.rainpole.com -e SSL_PORT=4443 -p 4443:4443 chef" >> /root/chef-readme.txt
-echo "chef-server-ctl reconfigure --accept-license" >> /root/chef-readme.txt
-
+# sed -i '/COPY/aCOPY .\/certs\/* \/var\/opt\/opscode\/nginx\/ca\/' ./Dockerfile
+# sed -i '/configure_chef.sh/i\ \ \ \ \/usr\/local\/bin\/configure_ntp.sh' ./run.sh
+# 
+# docker build -t chef .
+# docker run --privileged --name chef -d --restart=always -e CONTAINER_NAME=chef.rainpole.com -e SSL_PORT=4443 -p 4443:4443 -v /srv/chef/data:/var/opt/opscode/ -v /srv/chef/logs:/var/log/opscode/ -v /srv/chef/root:/root/ chef
+# 
+# echo "NOTE: this section doesn't fully work, you must get into the container and issue the following commands:'" > /root/chef-readme.txt
+# echo "docker build -t chef ." >> /root/chef-readme.txt
+# echo "docker run --privileged --name chef -d --restart=always -e CONTAINER_NAME=chef.rainpole.com -e SSL_PORT=4443 -p 4443:4443 chef" >> /root/chef-readme.txt
+# echo "chef-server-ctl reconfigure --accept-license" >> /root/chef-readme.txt
+# 
 # I can't get chef-manage to install and reconfigure inside docker - apparently a "Known Issue"
-echo "chef-server-ctl install chef-manage" >> /root/chef-readme.txt
+# echo "chef-server-ctl install chef-manage" >> /root/chef-readme.txt
 # echo "chef-server-ctl install opscode-reporting" >> /root/chef-readme.txt
-echo "chef-server-ctl install opscode-push-jobs-server" >> /root/chef-readme.txt
+# echo "chef-server-ctl install opscode-push-jobs-server" >> /root/chef-readme.txt
 echo "chef-server-ctl reconfigure" >> /root/chef-readme.txt
 echo "chef-manage-ctl reconfigure --accept-license" >> /root/chef-readme.txt
 echo You should now be able to log in to Chef Manage at https://chef.rainpole.com as administrator / VMware1! >> /root/chef-readme.txt
